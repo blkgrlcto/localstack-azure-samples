@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Trigger a payment</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px 20px 40px; min-height: 100vh;
+    background: #0b1220; color: #e8ecf4;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  h1 { font-size: 1.3rem; margin: 0 0 4px; }
+  p.sub { color: #9aa4b8; margin: 0 0 24px; font-size: 0.95rem; }
+  label { display: block; font-weight: 600; margin: 20px 0 8px; font-size: 0.95rem; }
+  .teams { display: flex; gap: 10px; }
+  .team-btn {
+    flex: 1; padding: 16px 0; border-radius: 12px; border: 2px solid #2a3550;
+    background: #131b2e; color: #e8ecf4; font-size: 1.1rem; font-weight: 700;
+    text-align: center;
+  }
+  .team-btn.selected.team-A { border-color: #ff6b6b; background: #2a1518; }
+  .team-btn.selected.team-B { border-color: #4dabf7; background: #10202e; }
+  input[type=number], select {
+    width: 100%; padding: 16px; font-size: 1.4rem; border-radius: 12px;
+    border: 2px solid #2a3550; background: #131b2e; color: #e8ecf4;
+  }
+  select { font-size: 1rem; }
+  .amount-hints { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .hint-btn {
+    padding: 8px 14px; border-radius: 999px; border: 1px solid #2a3550;
+    background: #131b2e; color: #cfd6e6; font-size: 0.85rem;
+  }
+  button.submit {
+    width: 100%; margin-top: 28px; padding: 18px; font-size: 1.15rem; font-weight: 700;
+    border-radius: 14px; border: none; background: #4c6ef5; color: white;
+  }
+  button.submit:active { background: #3b5bdb; }
+  #result {
+    margin-top: 18px; padding: 14px 16px; border-radius: 12px; font-size: 0.95rem;
+    display: none;
+  }
+  #result.ok { background: #133024; color: #6fe3a5; display: block; }
+  #result.err { background: #3a1a1a; color: #ff8787; display: block; }
+  .rules { margin-top: 30px; padding: 14px 16px; background: #101627; border-radius: 12px; font-size: 0.85rem; color: #9aa4b8; }
+  .rules b { color: #cfd6e6; }
+</style>
+</head>
+<body>
+  <h1>Trigger a payment</h1>
+  <p class="sub">This actually goes into the live pipeline. Watch the big screen.</p>
+
+  <form id="payform">
+    <label>Your team</label>
+    <div class="teams">
+      <div class="team-btn team-A" data-team="A">Team A</div>
+      <div class="team-btn team-B" data-team="B">Team B</div>
+    </div>
+    <input type="hidden" name="team" id="team" required>
+
+    <label for="amount">Amount (EUR)</label>
+    <input type="number" inputmode="decimal" name="amount" id="amount" value="120" min="1" max="20000" step="1">
+    <div class="amount-hints">
+      <div class="hint-btn" data-amount="120">120 (safe)</div>
+      <div class="hint-btn" data-amount="5500">5,500 (over threshold)</div>
+      <div class="hint-btn" data-amount="15000">15,000 (way over)</div>
+    </div>
+
+    <label for="merchant">Merchant</label>
+    <select name="merchant" id="merchant">
+      {% for m in ["contoso-grocery","fabrikam-electronics","northwind-travel","adventure-works","tailwind-fuel"] %}
+      <option value="{{ m }}">{{ m }}</option>
+      {% endfor %}
+    </select>
+
+    <button type="submit" class="submit">Send payment</button>
+  </form>
+
+  <div id="result"></div>
+
+  <div class="rules">
+    <b>Two ways to trigger an alert:</b><br>
+    1. Send one payment over <b>{{ "{:,.0f}".format(threshold) }}</b> - trips instantly.<br>
+    2. Team up: get more than <b>{{ velocity_count }}</b> submissions from your team within
+    60 seconds - any amount - and it trips the card-testing pattern instead.
+  </div>
+
+<script>
+const form = document.getElementById('payform');
+const result = document.getElementById('result');
+const teamButtons = document.querySelectorAll('.team-btn');
+const teamInput = document.getElementById('team');
+const amountInput = document.getElementById('amount');
+
+let selectedTeam = localStorage.getItem('team') || null;
+if (selectedTeam) {
+  teamInput.value = selectedTeam;
+  document.querySelector(`.team-btn[data-team="${selectedTeam}"]`).classList.add('selected');
+}
+
+teamButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    teamButtons.forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedTeam = btn.dataset.team;
+    teamInput.value = selectedTeam;
+    try { localStorage.setItem('team', selectedTeam); } catch (e) {}
+  });
+});
+
+document.querySelectorAll('.hint-btn').forEach(btn => {
+  btn.addEventListener('click', () => { amountInput.value = btn.dataset.amount; });
+});
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!teamInput.value) {
+    result.className = 'err';
+    result.textContent = 'Pick a team first.';
+    return;
+  }
+  const data = new FormData(form);
+  try {
+    const resp = await fetch('/submit', { method: 'POST', body: data });
+    const body = await resp.json();
+    result.className = body.ok ? 'ok' : 'err';
+    result.textContent = body.message;
+  } catch (err) {
+    result.className = 'err';
+    result.textContent = 'Network error - try again.';
+  }
+});
+</script>
+</body>
+</html>

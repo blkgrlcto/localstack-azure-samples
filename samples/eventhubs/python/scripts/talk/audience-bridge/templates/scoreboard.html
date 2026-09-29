@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scoreboard</title>
+<style>
+  body {
+    margin: 0; padding: 40px; min-height: 100vh; background: #0b1220; color: #e8ecf4;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  h1 { text-align: center; font-size: 2rem; margin-bottom: 40px; }
+  .teams { display: flex; gap: 40px; justify-content: center; flex-wrap: wrap; }
+  .team {
+    flex: 1; min-width: 320px; max-width: 480px; padding: 30px; border-radius: 20px;
+    text-align: center; border: 3px solid;
+  }
+  .team-A { border-color: #ff6b6b; background: #1a0f11; }
+  .team-B { border-color: #4dabf7; background: #0d1a24; }
+  .team h2 { font-size: 1.6rem; margin: 0 0 20px; }
+  .stat { font-size: 4rem; font-weight: 800; line-height: 1; }
+  .stat-label { color: #9aa4b8; font-size: 1rem; margin-bottom: 24px; }
+  .flagged { font-size: 1.8rem; color: #ffa94d; font-weight: 700; }
+  .recent { max-width: 900px; margin: 50px auto 0; }
+  .recent h3 { color: #9aa4b8; font-weight: 600; }
+  .row {
+    display: flex; justify-content: space-between; padding: 10px 16px; border-radius: 10px;
+    margin-bottom: 6px; font-size: 1rem;
+  }
+  .row.A { background: #1a0f11; }
+  .row.B { background: #0d1a24; }
+  .row .flag { color: #ffa94d; font-weight: 700; }
+</style>
+</head>
+<body>
+  <h1>Team A vs Team B</h1>
+  <div class="teams">
+    <div class="team team-A">
+      <h2>Team A</h2>
+      <div class="stat" id="a-count">0</div>
+      <div class="stat-label">payments sent</div>
+      <div class="flagged"><span id="a-flagged">0</span> flagged</div>
+    </div>
+    <div class="team team-B">
+      <h2>Team B</h2>
+      <div class="stat" id="b-count">0</div>
+      <div class="stat-label">payments sent</div>
+      <div class="flagged"><span id="b-flagged">0</span> flagged</div>
+    </div>
+  </div>
+
+  <div class="recent">
+    <h3>Latest submissions</h3>
+    <div id="recent-list"></div>
+  </div>
+
+<script>
+async function refresh() {
+  try {
+    const resp = await fetch('/api/scoreboard');
+    const data = await resp.json();
+    document.getElementById('a-count').textContent = data.stats.A.submitted;
+    document.getElementById('a-flagged').textContent = data.stats.A.flagged;
+    document.getElementById('b-count').textContent = data.stats.B.submitted;
+    document.getElementById('b-flagged').textContent = data.stats.B.flagged;
+    const list = document.getElementById('recent-list');
+    list.innerHTML = data.recent.map(r => `
+      <div class="row ${r.team}">
+        <span>Team ${r.team} - ${r.merchant}</span>
+        <span>${r.flagged ? '<span class="flag">🚨 ' : ''}€${r.amount.toLocaleString()}${r.flagged ? '</span>' : ''}</span>
+      </div>
+    `).join('');
+  } catch (e) { /* keep last good render */ }
+}
+refresh();
+setInterval(refresh, 1500);
+</script>
+</body>
+</html>
