@@ -151,7 +151,7 @@ lstk stop
 | Symptom | Fix |
 |---|---|
 | `ModuleNotFoundError: No module named 'azure'` | `source .venv/bin/activate` (from `samples/eventhubs/python`) |
-| `Port 5050 is in use` | `lsof -i :5050`, then `kill <PID>` |
+| `Port 5050 is in use` (Bridge) or `address already in use` on `7071` (Func) | `lsof -i :5050` or `lsof -i :7071`, then `kill <PID>` — almost always a leftover process from an earlier rehearsal that never got stopped |
 | `.venv/bin/activate: permission denied` | You forgot `source` in front of it |
 | `Worker runtime cannot be 'None'` | Run `scripts/talk/local-dev-loop.sh` before `func start`, not after |
 | `EVENTHUB_SEND_CONNECTION_STRING is not set` | `source scripts/.deployment-env` from `samples/eventhubs/python`, **before** `cd`-ing anywhere else |
