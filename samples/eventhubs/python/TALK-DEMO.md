@@ -1,5 +1,9 @@
 # Speaker runbook — "Azure Feels Slow Because Your Dev Loop Is Broken"
 
+**On stage, use `CHEAT-SHEET.md` instead** — pure commands, no prose, organized the same
+way as the segments below. This file is for rehearsal: the why behind each command, the
+timing data, and what to do when something goes wrong.
+
 Target: **90-minute interactive session**. This sample (`samples/eventhubs`, the fraud
 detection pipeline) is the flagship: three ingestion protocols into one Event Hub, a
 serverless fraud detector, checkpointed recovery, an Avro cold path, a live dashboard, and
