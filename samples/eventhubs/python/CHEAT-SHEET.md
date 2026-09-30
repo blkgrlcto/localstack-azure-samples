@@ -14,13 +14,26 @@ lstk start -t azure
 lstk az start-interception
 bash scripts/deploy.sh
 ```
-→ if the Function App step 500s: just run `bash scripts/deploy.sh` again (safe, idempotent).
+→ **step [10/12] (Function App) failing with a 500 is expected on a fresh emulator** — the
+container has to cold-start and download its extension bundle, which the CLI's own
+timeout doesn't wait for. If you see `ERROR: could not deploy the function app`:
+
+```bash
+bash scripts/talk/recover-webapp.sh
+```
+⚠️ **Do NOT re-run `bash scripts/deploy.sh` instead** — it replaces the container and resets
+the download to zero, every time. `recover-webapp.sh` waits for the *same* container
+(can take several minutes, sometimes 10+) then finishes the Web App/dashboard steps and
+writes `.deployment-env`. Prints the dashboard URL when done.
+
+(If `deploy.sh` fails *earlier* than step 10 - resource group, storage, Event Hubs - that's
+a real failure, not this race. Re-run `bash scripts/deploy.sh` from scratch instead.)
 
 ```bash
 source .venv/bin/activate
 bash scripts/talk/ingest.sh
 ```
-→ "Alert landed." If it says "no alert" instead: Function App is cold, wait ~1 min, run it again.
+→ "Alert landed." If it says "no alert" instead: Function App is cold, wait 1-10 min, run it again.
 
 **Bridge pane:**
 ```bash
@@ -142,5 +155,6 @@ lstk stop
 | `.venv/bin/activate: permission denied` | You forgot `source` in front of it |
 | `Worker runtime cannot be 'None'` | Run `scripts/talk/local-dev-loop.sh` before `func start`, not after |
 | `EVENTHUB_SEND_CONNECTION_STRING is not set` | `source scripts/.deployment-env` from `samples/eventhubs/python`, **before** `cd`-ing anywhere else |
-| "no alert" / DEMO STALLED | Function App went cold (idle timeout) — wait ~1 min, re-run `ingest.sh` |
+| "no alert" / DEMO STALLED | Function App went cold (idle timeout) — wait 1-10 min, re-run `ingest.sh` |
+| `deploy.sh` fails at step [10/12], "could not deploy the function app" | `bash scripts/talk/recover-webapp.sh` — **never** re-run `deploy.sh` for this one |
 | Anything else | Say so, move to slides, come back to it later. Don't debug live. |

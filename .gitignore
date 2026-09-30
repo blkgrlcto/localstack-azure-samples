@@ -246,4 +246,4 @@ override.tf.json
 # generated on the fly (e.g. scripts/talk/local-dev-loop.sh) and never committed.
 local.settings.json
 # Personal conference-talk slide exports - not part of the sample.
-azure-dev-loop-talk.pptx
+azure-dev-loop-talk*.pptx
